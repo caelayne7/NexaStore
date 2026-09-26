@@ -275,9 +275,43 @@
         </div>
     </footer>
 
-    <div class="toast" id="toast">
-        Produto adicionado ao carrinho!
+    <div class="cart-overlay" id="cartOverlay"></div>
+
+<aside class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+        <div>
+            <span class="section-tag">SEU PEDIDO</span>
+            <h2>Meu carrinho</h2>
+        </div>
+
+        <button class="close-cart" id="closeCart">
+            ×
+        </button>
     </div>
+
+    <div class="cart-items" id="cartItems">
+    </div>
+
+    <div class="cart-footer" id="cartFooter">
+        <div class="cart-total">
+            <span>Total</span>
+            <strong id="cartTotal">R$ 0,00</strong>
+        </div>
+
+        <button class="checkout-button" id="checkoutButton">
+            Continuar para pagamento
+            <span>→</span>
+        </button>
+
+        <small class="secure-message">
+            🔒 Compra segura e protegida
+        </small>
+    </div>
+</aside>
+
+<div class="toast" id="toast">
+    Produto adicionado ao carrinho!
+</div>
 
     <script src="src/data/products.js"></script>
     <script src="src/app.js"></script>
