@@ -1157,3 +1157,13 @@ body.cart-open {
     margin-top: 14px;
     text-align: center;
 }
+
+.product-image img.product-photo {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 65%;
+    max-height: 70%;
+    object-fit: contain;
+    object-position: center;
+}

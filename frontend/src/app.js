@@ -34,7 +34,11 @@ function renderProducts(filter = "todos") {
                         ♡
                     </button>
 
-                    <span class="product-symbol">${product.icon}</span>
+                    ${
+                     product.image
+                     ? `<img class="product-photo" src="${product.image}" alt="${product.name}">`
+                     : `<span class="product-symbol">${product.icon}</span>`
+                    }
                 </div>
 
                 <div class="product-info">
