@@ -13,14 +13,78 @@ const checkoutButton = document.getElementById("checkoutButton");
 const menuButton = document.getElementById("menuButton");
 const mainNav = document.getElementById("mainNav");
 
-let cart = JSON.parse(localStorage.getItem("nexastore-cart")) || [];
+let currentFilter = "todos";
 
-function renderProducts(filter = "todos") {
+function readStorage(key, fallbackValue) {
+    try {
+        const savedValue = localStorage.getItem(key);
+        return savedValue ? JSON.parse(savedValue) : fallbackValue;
+    } catch {
+        return fallbackValue;
+    }
+}
+
+// Aplica ao catálogo o estoque salvo no navegador, se houver.
+const savedStocks = readStorage("nexastore-stock", {});
+
+products.forEach(product => {
+    const savedStock = Number(savedStocks[product.id]);
+
+    if (
+        Object.prototype.hasOwnProperty.call(savedStocks, product.id) &&
+        Number.isInteger(savedStock) &&
+        savedStock >= 0
+    ) {
+        product.stock = savedStock;
+    }
+
+    product.stock = Number(product.stock) || 0;
+});
+
+function loadCart() {
+    const savedCart = readStorage("nexastore-cart", []);
+
+    if (!Array.isArray(savedCart)) {
+        return [];
+    }
+
+    return savedCart.map(savedItem => {
+        const product = products.find(item => item.id === savedItem.id);
+
+        if (!product) {
+            return null;
+        }
+
+        const savedQuantity = Math.max(
+            0,
+            Math.floor(Number(savedItem.quantity) || 0)
+        );
+
+        const quantity = Math.min(savedQuantity, product.stock);
+
+        if (quantity === 0) {
+            return null;
+        }
+
+        return {
+            ...product,
+            quantity
+        };
+    }).filter(Boolean);
+}
+
+let cart = loadCart();
+
+function renderProducts(filter = currentFilter) {
+    currentFilter = filter;
+
     const filteredProducts = products.filter(product => {
         return filter === "todos" || product.category === filter;
     });
 
     productsGrid.innerHTML = filteredProducts.map(product => {
+        const isOutOfStock = product.stock <= 0;
+
         return `
             <article class="product-card">
                 <div class="product-image ${product.color}">
@@ -30,14 +94,18 @@ function renderProducts(filter = "todos") {
                             : ""
                     }
 
-                    <button class="favorite-button" title="Adicionar aos favoritos">
+                    <button
+                        class="favorite-button"
+                        type="button"
+                        title="Adicionar aos favoritos"
+                    >
                         ♡
                     </button>
 
                     ${
-                     product.image
-                     ? `<img class="product-photo" src="${product.image}" alt="${product.name}">`
-                     : `<span class="product-symbol">${product.icon}</span>`
+                        product.image
+                            ? `<img class="product-photo" src="${product.image}" alt="${product.name}">`
+                          : `<span class="product-symbol">${product.icon}</span>`  
                     }
                 </div>
 
@@ -65,11 +133,20 @@ function renderProducts(filter = "todos") {
                         <small>${product.installment}</small>
                     </div>
 
+                    <small class="stock-info">
+                        ${
+                            isOutOfStock
+                                ? "Esgotado"
+                                : `Em estoque: ${product.stock}`
+                        }
+                    </small>
+
                     <button
                         class="add-cart-button"
                         data-product-id="${product.id}"
+                        ${isOutOfStock ? "disabled" : ""}
                     >
-                        Adicionar ao carrinho
+                        ${isOutOfStock ? "Produto esgotado" : "Adicionar ao carrinho"}
                         <span>+</span>
                     </button>
                 </div>
@@ -86,31 +163,36 @@ function addCartEvents() {
     buttons.forEach(button => {
         button.addEventListener("click", () => {
             const productId = Number(button.dataset.productId);
-
             addToCart(productId);
-            showToast();
         });
     });
 }
 
 function addToCart(productId) {
-    const selectedProduct = products.find(product => {
-        return product.id === productId;
-    });
+    const product = products.find(item => item.id === productId);
 
-    if (!selectedProduct) {
+    if (!product) {
         return;
     }
 
-    const existingProduct = cart.find(product => {
-        return product.id === productId;
-    });
+    if (product.stock <= 0) {
+        showToast("Este produto está esgotado.");
+        return;
+    }
 
-    if (existingProduct) {
-        existingProduct.quantity++;
+    const cartItem = cart.find(item => item.id === productId);
+    const quantityInCart = cartItem ? cartItem.quantity : 0;
+
+    if (quantityInCart >= product.stock) {
+        showToast("Você já adicionou todas as unidades disponíveis.");
+        return;
+    }
+
+    if (cartItem) {
+        cartItem.quantity++;
     } else {
         cart.push({
-            ...selectedProduct,
+            ...product,
             quantity: 1
         });
     }
@@ -118,26 +200,23 @@ function addToCart(productId) {
     saveCart();
     updateCartCount();
     renderCart();
-}
-
-function removeFromCart(productId) {
-    cart = cart.filter(product => {
-        return product.id !== productId;
-    });
-
-    saveCart();
-    updateCartCount();
-    renderCart();
+    showToast("Produto adicionado ao carrinho!");
 }
 
 function increaseQuantity(productId) {
-    const product = cart.find(item => {
-        return item.id === productId;
-    });
+    const cartItem = cart.find(item => item.id === productId);
+    const product = products.find(item => item.id === productId);
 
-    if (product) {
-        product.quantity++;
+    if (!cartItem || !product) {
+        return;
     }
+
+    if (cartItem.quantity >= product.stock) {
+        showToast("Não há mais unidades disponíveis.");
+        return;
+    }
+
+    cartItem.quantity++;
 
     saveCart();
     updateCartCount();
@@ -145,16 +224,14 @@ function increaseQuantity(productId) {
 }
 
 function decreaseQuantity(productId) {
-    const product = cart.find(item => {
-        return item.id === productId;
-    });
+    const cartItem = cart.find(item => item.id === productId);
 
-    if (!product) {
+    if (!cartItem) {
         return;
     }
 
-    if (product.quantity > 1) {
-        product.quantity--;
+    if (cartItem.quantity > 1) {
+        cartItem.quantity--;
     } else {
         removeFromCart(productId);
         return;
@@ -165,9 +242,17 @@ function decreaseQuantity(productId) {
     renderCart();
 }
 
+function removeFromCart(productId) {
+    cart = cart.filter(item => item.id !== productId);
+
+    saveCart();
+    updateCartCount();
+    renderCart();
+}
+
 function updateCartCount() {
-    const totalItems = cart.reduce((total, product) => {
-        return total + product.quantity;
+    const totalItems = cart.reduce((total, item) => {
+        return total + item.quantity;
     }, 0);
 
     cartCount.textContent = totalItems;
@@ -179,9 +264,7 @@ function renderCart() {
             <div class="empty-cart">
                 <div class="empty-cart-icon">🛒</div>
                 <h3>Seu carrinho está vazio</h3>
-                <p>
-                    Adicione produtos para começar sua compra.
-                </p>
+                <p>Adicione produtos para começar sua compra.</p>
 
                 <button class="continue-shopping" id="continueShopping">
                     Continuar comprando
@@ -189,10 +272,11 @@ function renderCart() {
             </div>
         `;
 
-        cartTotal.textContent = "R$ 0,00";
+        cartTotal.textContent = formatCurrency(0);
         checkoutButton.disabled = true;
 
-        const continueShopping = document.getElementById("continueShopping");
+        const continueShopping =
+            document.getElementById("continueShopping");
 
         if (continueShopping) {
             continueShopping.addEventListener("click", closeCartDrawer);
@@ -201,11 +285,23 @@ function renderCart() {
         return;
     }
 
-    cartItemsContainer.innerHTML = cart.map(product => {
+    checkoutButton.disabled = false;
+
+    cartItemsContainer.innerHTML = cart.map(cartItem => {
+        const product = products.find(item => item.id === cartItem.id);
+
+        if (!product) {
+            return "";
+        }
+
         return `
             <div class="cart-item">
                 <div class="cart-item-image ${product.color}">
-                    ${product.icon}
+                    ${
+                        product.image
+                            ? `<img class="cart-product-photo" src="${product.image}" alt="${product.name}">`
+                            : product.icon
+                    }
                 </div>
 
                 <div class="cart-item-info">
@@ -215,15 +311,17 @@ function renderCart() {
 
                     <div class="quantity-control">
                         <button
+                            type="button"
                             data-action="decrease"
                             data-product-id="${product.id}"
                         >
                             −
                         </button>
 
-                        <span>${product.quantity}</span>
+                        <span>${cartItem.quantity}</span>
 
                         <button
+                            type="button"
                             data-action="increase"
                             data-product-id="${product.id}"
                         >
@@ -234,6 +332,7 @@ function renderCart() {
 
                 <button
                     class="remove-item"
+                    type="button"
                     data-action="remove"
                     data-product-id="${product.id}"
                     title="Remover produto"
@@ -244,12 +343,42 @@ function renderCart() {
         `;
     }).join("");
 
-    const total = cart.reduce((sum, product) => {
-        return sum + convertPrice(product.price) * product.quantity;
+    const total = cart.reduce((sum, cartItem) => {
+        const product = products.find(item => item.id === cartItem.id);
+
+        if (!product) {
+            return sum;
+        }
+
+        return sum + convertPrice(product.price) * cartItem.quantity;
     }, 0);
 
     cartTotal.textContent = formatCurrency(total);
-    checkoutButton.disabled = false;
+}
+
+function saveCart() {
+    const cartToSave = cart.map(item => ({
+        id: item.id,
+        quantity: item.quantity
+    }));
+
+    localStorage.setItem(
+        "nexastore-cart",
+        JSON.stringify(cartToSave)
+    );
+}
+
+function saveStocks() {
+    const stocksToSave = {};
+
+    products.forEach(product => {
+        stocksToSave[product.id] = product.stock;
+    });
+
+    localStorage.setItem(
+        "nexastore-stock",
+        JSON.stringify(stocksToSave)
+    );
 }
 
 function convertPrice(price) {
@@ -269,10 +398,6 @@ function formatCurrency(value) {
     });
 }
 
-function saveCart() {
-    localStorage.setItem("nexastore-cart", JSON.stringify(cart));
-}
-
 function openCartDrawer() {
     cartDrawer.classList.add("open");
     cartOverlay.classList.add("show");
@@ -285,12 +410,59 @@ function closeCartDrawer() {
     document.body.classList.remove("cart-open");
 }
 
-function showToast() {
+function showToast(message) {
+    toast.textContent = message;
     toast.classList.add("show");
 
     setTimeout(() => {
         toast.classList.remove("show");
     }, 2500);
+}
+
+function simulatePurchase() {
+    if (cart.length === 0) {
+        return;
+    }
+
+    const insufficientStock = cart.some(cartItem => {
+        const product = products.find(item => item.id === cartItem.id);
+
+        return !product || product.stock < cartItem.quantity;
+    });
+
+    if (insufficientStock) {
+        showToast("Estoque insuficiente. Confira seu carrinho.");
+        return;
+    }
+
+    const confirmed = window.confirm(
+        "Confirmar compra simulada? Nenhum pagamento real será realizado."
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    cart.forEach(cartItem => {
+        const product = products.find(item => item.id === cartItem.id);
+
+        if (product) {
+            product.stock -= cartItem.quantity;
+        }
+    });
+
+    cart = [];
+
+    saveStocks();
+    saveCart();
+    updateCartCount();
+    renderCart();
+    renderProducts(currentFilter);
+    closeCartDrawer();
+
+    alert(
+        "Compra simulada concluída. O estoque demonstrativo foi atualizado."
+    );
 }
 
 function setupCartEvents() {
@@ -321,15 +493,7 @@ function setupCartEvents() {
         }
     });
 
-    checkoutButton.addEventListener("click", () => {
-        if (cart.length === 0) {
-            return;
-        }
-
-        alert(
-            "Checkout preparado! Na próxima etapa vamos criar a página de pagamento."
-        );
-    });
+    checkoutButton.addEventListener("click", simulatePurchase);
 }
 
 function setupFilters() {
@@ -342,7 +506,6 @@ function setupFilters() {
             });
 
             button.classList.add("active");
-
             renderProducts(button.dataset.filter);
         });
     });
@@ -387,7 +550,6 @@ function setupNewsletter() {
 
     form.addEventListener("submit", event => {
         event.preventDefault();
-
         alert("Cadastro realizado com sucesso!");
         form.reset();
     });

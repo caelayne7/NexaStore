@@ -12,7 +12,8 @@ const products = [
         installment: "ou 6x de R$ 46,65",
         rating: "4.9",
         reviews: 128,
-        badge: "Mais vendido"
+        badge: "Mais vendido",
+        stock: 8
     },
     {
         id: 2,
@@ -27,7 +28,8 @@ const products = [
         installment: "ou 5x de R$ 49,98",
         rating: "4.8",
         reviews: 96,
-        badge: "Oferta"
+        badge: "Oferta",
+        stock: 6
     },
     {
         id: 3,
@@ -42,7 +44,8 @@ const products = [
         installment: "ou 4x de R$ 47,47",
         rating: "4.7",
         reviews: 74,
-        badge: ""
+        badge: "",
+        stock: 4
     },
     {
         id: 4,
@@ -57,7 +60,8 @@ const products = [
         installment: "ou 8x de R$ 56,24",
         rating: "4.9",
         reviews: 215,
-        badge: "Lançamento"
+        badge: "Lançamento",
+        stock: 5
     },
     {
         id: 5,
@@ -72,7 +76,8 @@ const products = [
         installment: "ou 4x de R$ 54,97",
         rating: "4.8",
         reviews: 58,
-        badge: ""
+        badge: "",
+        stock: 7
     },
     {
         id: 6,
@@ -87,6 +92,7 @@ const products = [
         installment: "ou 3x de R$ 39,97",
         rating: "4.6",
         reviews: 42,
-        badge: "Oferta"
+        badge: "Oferta",
+        stock: 10
     }
 ];
