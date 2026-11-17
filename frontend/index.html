@@ -313,6 +313,29 @@
     Produto adicionado ao carrinho!
 </div>
 
+<section class="order-modal" id="orderModal" hidden>
+    <div class="order-modal-content" role="dialog" aria-modal="true" aria-labelledby="orderTitle">
+        <button class="order-close" id="closeOrderModal" aria-label="Fechar">×</button>
+
+        <span class="section-tag">REVISÃO DO PEDIDO</span>
+        <h2 id="orderTitle">Confira sua compra</h2>
+
+        <div id="orderSummary"></div>
+
+        <div class="order-total">
+            <span>Total</span>
+            <strong id="orderTotal">R$ 0,00</strong>
+        </div>
+
+        <p class="demo-notice">Compra demonstrativa — nenhum pagamento real será feito.</p>
+
+        <div class="order-buttons">
+            <button type="button" id="cancelOrder">Voltar ao carrinho</button>
+            <button type="button" id="confirmOrder">Confirmar compra simulada</button>
+        </div>
+    </div>
+</section>
+
     <script src="src/data/products.js"></script>
     <script src="src/app.js"></script>
 </body>

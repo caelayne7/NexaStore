@@ -1186,3 +1186,95 @@ body.cart-open {
     object-fit: contain;
     border-radius: 8px;
 }
+
+.order-modal[hidden] {
+    display: none;
+}
+
+.order-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.order-modal-content {
+    width: min(480px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    border-radius: 16px;
+    background: var(--surface);
+    padding: 28px;
+}
+
+.order-modal-content h2 {
+    margin: 8px 0 20px;
+    font-size: 23px;
+}
+
+.order-close {
+    position: absolute;
+    top: 15px;
+    right: 18px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font-size: 28px;
+}
+
+.order-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+    font-size: 13px;
+}
+
+.order-total {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 18px;
+    font-size: 17px;
+}
+
+.demo-notice {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.order-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.order-buttons button {
+    flex: 1;
+    border: 0;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+#cancelOrder {
+    color: var(--text);
+    background: #eeeef2;
+}
+
+#confirmOrder {
+    color: white;
+    background: var(--secondary);
+}
+
+@media (max-width: 480px) {
+    .order-buttons {
+        flex-direction: column;
+    }
+}
